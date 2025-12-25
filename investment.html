@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
+<title>智能定投策略</title>
+<style>
+:root{
+  --primary:#6178ff;
+  --primary-dark:#4a5fd0;
+  --bg:#f4f6fb;
+  --card:#ffffff;
+  --text:#333;
+  --radius:14px;
+  --shadow:0 4px 20px rgba(0,0,0,.08);
+}
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+html,body{
+  margin:0;
+  padding:0;
+  height:100%;
+  font:16px/1.5 -apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",SimSun,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+/* ===== 电脑端玻璃罩 ===== */
+.pc{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+  padding:40px 20px;
+}
+.pc .glass{
+  width:100%;
+  max-width:480px;
+  background:rgba(255,255,255,.75);
+  backdrop-filter:blur(10px);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:32px;
+}
+.pc header{
+  text-align:center;
+  font-size:24px;
+  font-weight:700;
+  color:var(--primary);
+  margin-bottom:20px;
+}
+.pc .input-card{
+  margin-bottom:16px;
+}
+.pc label{
+  font-size:14px;
+  color:#666;
+  margin-bottom:6px;
+}
+.pc input{
+  width:100%;
+  border:1px solid #e0e0e0;
+  border-radius:8px;
+  padding:12px;
+  font-size:16px;
+}
+.pc .result-card{
+  background:linear-gradient(135deg,#e0e7ff 0%,#c7d2ff 100%);
+  border-radius:var(--radius);
+  padding:16px;
+  margin-bottom:20px;
+  display:none;
+  animation:fadeIn .3s ease;
+}
+.pc .result-card p{
+  margin:6px 0;
+  font-size:16px;
+}
+.pc .result-card .val{
+  font-size:24px;
+  font-weight:700;
+  color:var(--primary);
+}
+.pc button{
+  width:100%;
+  border:none;
+  border-radius:var(--radius);
+  padding:14px;
+  font-size:16px;
+  font-weight:700;
+  color:#fff;
+  background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);
+  box-shadow:var(--shadow);
+  cursor:pointer;
+}
+button:active{
+  transform:scale(.98);
+}
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(6px);}
+  to{opacity:1;transform:none;}
+}
+</style>
+</head>
+<body class="pc">
+<div class="glass">
+  <header>智能定投策略</header>
+
+  <div class="input-card">
+    <label>定投基准金额（元）</label>
+    <input id="base" type="number" step="0.01" value="1000" />
+  </div>
+  <div class="input-card">
+    <label>当前基金净值（元）</label>
+    <input id="nav" type="number" step="0.0001" value="" placeholder="请输入当前净值" />
+  </div>
+  <div class="input-card">
+    <label>平均持仓成本（元）</label>
+    <input id="avg" type="number" step="0.0001" value="" placeholder="请输入持仓成本" />
+  </div>
+
+  <div id="res" class="result-card">
+    <p>扣款比例：<span class="val" id="ratio"></span></p>
+    <p>本期金额：<span class="val" id="amt"></span> 元</p>
+  </div>
+
+  <button onclick="calc()">计算本期应投金额</button>
+</div>
+
+<script>
+function calc() {
+  const b = parseFloat(base.value), n = parseFloat(nav.value), a = parseFloat(avg.value);
+  if (isNaN(b) || isNaN(n) || isNaN(a)) { alert('请检查输入'); return; }
+  const d = (n - a) / a;
+  let r = 1;
+  if (d <= -0.25)       r = 2.00;
+  else if (d < -0.20)   r = 1.95;
+  else if (d < -0.15)   r = 1.90;
+  else if (d < -0.10)   r = 1.80;
+  else if (d < -0.075)  r = 1.60;
+  else if (d < -0.05)   r = 1.40;
+  else if (d < -0.025)  r = 1.20;
+  else if (d <= 0.025)  r = 1.00;
+  else if (d < 0.05)    r = 0.90;
+  else if (d < 0.075)   r = 0.80;
+  else if (d < 0.10)    r = 0.70;
+  else if (d < 0.15)    r = 0.60;
+  else if (d < 0.20)    r = 0.55;
+  else if (d < 0.25)    r = 0.525;
+  else                  r = 0.50;
+  ratio.textContent = (r * 100).toFixed(1) + '%';
+  amt.textContent = (b * r).toFixed(2);
+  res.style.display = 'block';
+}
+</script>
+</body>
+</html>
