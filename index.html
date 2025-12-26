@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no" />
-<title>智能定投策略</title>
+<title>定投策略</title>
 <style>
 :root{
   --primary:#6178ff;
@@ -28,15 +28,15 @@ html,body{
   color:var(--text);
 }
 
-/* ===== 电脑端玻璃罩 ===== */
-.pc{
+/* ===== 玻璃罩 ===== */
+.glass-container{
   display:flex;
   align-items:center;
   justify-content:center;
   min-height:100vh;
   padding:40px 20px;
 }
-.pc .glass{
+.glass-container .glass{
   width:100%;
   max-width:480px;
   background:rgba(255,255,255,.75);
@@ -45,29 +45,29 @@ html,body{
   box-shadow:var(--shadow);
   padding:32px;
 }
-.pc header{
+.glass-container header{
   text-align:center;
   font-size:24px;
   font-weight:700;
   color:var(--primary);
   margin-bottom:20px;
 }
-.pc .input-card{
+.glass-container .input-card{
   margin-bottom:16px;
 }
-.pc label{
+.glass-container label{
   font-size:14px;
   color:#666;
   margin-bottom:6px;
 }
-.pc input{
+.glass-container input{
   width:100%;
   border:1px solid #e0e0e0;
   border-radius:8px;
   padding:12px;
   font-size:16px;
 }
-.pc .result-card{
+.glass-container .result-card{
   background:linear-gradient(135deg,#e0e7ff 0%,#c7d2ff 100%);
   border-radius:var(--radius);
   padding:16px;
@@ -75,16 +75,16 @@ html,body{
   display:none;
   animation:fadeIn .3s ease;
 }
-.pc .result-card p{
+.glass-container .result-card p{
   margin:6px 0;
   font-size:16px;
 }
-.pc .result-card .val{
+.glass-container .result-card .val{
   font-size:24px;
   font-weight:700;
   color:var(--primary);
 }
-.pc button{
+.glass-container button{
   width:100%;
   border:none;
   border-radius:var(--radius);
@@ -105,9 +105,9 @@ button:active{
 }
 </style>
 </head>
-<body class="pc">
+<body class="glass-container">
 <div class="glass">
-  <header>智能定投策略</header>
+  <header>移动平均持仓成本策略</header>
 
   <div class="input-card">
     <label>定投基准金额（元）</label>
@@ -130,30 +130,53 @@ button:active{
   <button onclick="calc()">计算本期应投金额</button>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/decimal.js@10.4.3/decimal.min.js"></script>
 <script>
 function calc() {
-  const b = parseFloat(base.value), n = parseFloat(nav.value), a = parseFloat(avg.value);
-  if (isNaN(b) || isNaN(n) || isNaN(a)) { alert('请检查输入'); return; }
-  const d = (n - a) / a;
-  let r = 1;
-  if (d <= -0.25)       r = 2.00;
-  else if (d <= -0.20)   r = 1.95;
-  else if (d <= -0.15)   r = 1.90;
-  else if (d <= -0.10)   r = 1.80;
-  else if (d <= -0.075)  r = 1.60;
-  else if (d <= -0.05)   r = 1.40;
-  else if (d <= -0.025)  r = 1.20;
-  else if (d < 0.025)  r = 1.00;
-  else if (d < 0.05)    r = 0.90;
-  else if (d < 0.075)   r = 0.80;
-  else if (d < 0.10)    r = 0.70;
-  else if (d < 0.15)    r = 0.60;
-  else if (d < 0.20)    r = 0.55;
-  else if (d < 0.25)    r = 0.525;
-  else                  r = 0.50;
-  ratio.textContent = (r * 100).toFixed(1) + '%';
-  amt.textContent = (b * r).toFixed(2);
-  res.style.display = 'block';
+  // 获取输入值并直接用decimal.js处理，避免转换为float
+  const baseValue = new Decimal(document.getElementById('base').value || 0);
+  const navValue = new Decimal(document.getElementById('nav').value || 0);
+  const avgValue = new Decimal(document.getElementById('avg').value || 0);
+  
+  // 检查输入是否有效
+  if (baseValue.isNaN() || navValue.isNaN() || avgValue.isNaN()) { 
+    alert('请检查输入'); 
+    return; 
+  }
+  
+  // 检查关键参数是否为0，避免除零错误
+  if (avgValue.isZero()) {
+    alert('平均持仓成本不能为0'); 
+    return; 
+  }
+
+  // 使用decimal.js进行精确计算
+  const d = navValue.minus(avgValue).div(avgValue);
+
+  let r = new Decimal(1);
+  if (d.lte(-0.25))       r = new Decimal(2.00);
+  else if (d.lte(-0.20))   r = new Decimal(1.95);
+  else if (d.lte(-0.15))   r = new Decimal(1.90);
+  else if (d.lte(-0.10))   r = new Decimal(1.80);
+  else if (d.lte(-0.075))  r = new Decimal(1.60);
+  else if (d.lte(-0.05))   r = new Decimal(1.40);
+  else if (d.lte(-0.025))  r = new Decimal(1.20);
+  else if (d.lt(0.025))    r = new Decimal(1.00);
+  else if (d.lt(0.05))     r = new Decimal(0.90);
+  else if (d.lt(0.075))    r = new Decimal(0.80);
+  else if (d.lt(0.10))     r = new Decimal(0.70);
+  else if (d.lt(0.15))     r = new Decimal(0.60);
+  else if (d.lt(0.20))     r = new Decimal(0.55);
+  else if (d.lt(0.25))     r = new Decimal(0.525);
+  else                     r = new Decimal(0.50);
+  
+  // 使用decimal.js进行最终结果计算并转换为字符串显示
+  const ratioDisplay = r.times(100).toFixed(1) + '%';
+  const amtDisplay = baseValue.times(r).toFixed(2);
+  
+  document.getElementById('ratio').textContent = ratioDisplay;
+  document.getElementById('amt').textContent = amtDisplay;
+  document.getElementById('res').style.display = 'block';
 }
 </script>
 </body>
